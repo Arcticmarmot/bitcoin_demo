@@ -1,7 +1,5 @@
 from unittest import TestSuite, TextTestRunner
-
 import hashlib
-
 
 def run(test):
     suite = TestSuite()
