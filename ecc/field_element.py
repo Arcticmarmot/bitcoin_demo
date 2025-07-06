@@ -35,6 +35,10 @@ class FieldElement:
         num = (self.num * pow(other.num, self.prime - 2, self.prime)) % self.prime
         return self.__class__(num, self.prime)
 
+    def __rmul__(self, coefficient):
+        num = (self.num * coefficient) % self.prime
+        return self.__class__(num, self.prime)
+
     def __repr__(self):
         return 'FieldElement_{}({})'.format(self.prime, self.num)
 
@@ -45,3 +49,11 @@ class FieldElement:
 
     def __ne__(self, other):
         return not (self == other)
+
+P = 2**256 - 2**32 - 977
+class S256Field(FieldElement):
+    def __init__(self, num, prime=None):
+        super().__init__(num = num, prime = P)
+
+    def __repr__(self):
+        return '{:x}'.format(self.num).zfill(64)
