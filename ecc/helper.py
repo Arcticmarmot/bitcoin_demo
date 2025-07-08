@@ -1,6 +1,16 @@
 from unittest import TestSuite, TextTestRunner
 import hashlib
 
+from ecc.field_element import S256Field
+from ecc.point import S256Point
+
+A = 0
+B = 7
+N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+P = 2**256 - 2**32 - 977
+G = S256Point(0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798, 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8)
+BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
 def run(test):
     suite = TestSuite()
     suite.addTest(test)
@@ -10,7 +20,6 @@ def hash256(s):
     # two rounds of sha256
     return hashlib.sha256(hashlib.sha256(s).digest()).digest()
 
-BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 def encode_base58(s):
     count = 0
     for c in s:
@@ -34,25 +43,24 @@ def hash160(s):
     """sha256 followed by ripemd160"""
     return hashlib.new('ripemd160', hashlib.sha256(s).digest()).digest()
 
-def little_endian_to_int(lbs):
-    result = 0
-    current = 1
-    for i in range(0, len(lbs)):
-        result += lbs[i] * current
-        current *= 256
-    return result
-
-def int_to_little_endian(num):
-    result = []
-    while num > 0:
-        num, sub_byte = divmod(num, 256)
-        result.append(sub_byte)
-    return bytes(result)
-
-# b = bytes([10, 30, 30, 50, 99])
-# n = 1000435345
-# print(little_endian_to_int(b))
-# print(int.from_bytes(b, 'little'))
-# byte = int_to_little_endian(n)
-# print(byte)
-# print(little_endian_to_int(byte))
+def parse_sec(self, sec_bin):
+    """return a Point object from an SEC binary (not hex)"""
+    prefix = sec_bin[0]
+    if prefix == 4:
+        x = int.from_bytes(sec_bin[1:33], 'big')
+        y = int.from_bytes(sec_bin[33:65], 'big')
+        return S256Point(x, y)
+    is_even = prefix == 2
+    x = S256Field(int.from_bytes(sec_bin[1:], 'big'))
+    alpha = x ** 3 + S256Field(B)
+    beta = alpha.sqrt()
+    if beta.num % 2 == 0:
+        even_beta = beta
+        odd_beta = S256Field(P - beta.num)
+    else:
+        even_beta = S256Field(P - beta.num)
+        odd_beta = beta
+    if is_even:
+        return S256Point(x, even_beta)
+    else:
+        return S256Point(x, odd_beta)
