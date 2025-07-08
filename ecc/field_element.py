@@ -1,3 +1,5 @@
+from params import P
+
 class FieldElement:
     def __init__(self, num, prime):
         if num >= prime or num < 0:
@@ -50,7 +52,6 @@ class FieldElement:
     def __ne__(self, other):
         return not (self == other)
 
-P = 2**256 - 2**32 - 977
 class S256Field(FieldElement):
     def __init__(self, num, prime=None):
         super().__init__(num = num, prime = P)

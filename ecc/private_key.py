@@ -1,24 +1,23 @@
 from random import randint
 
-from ecc.helper import N, G, encode_base58_checksum
-from ecc.signature import Signature
+from point import S256Point
+from helper import encode_base58_checksum
+from signature import Signature
+from params import N, Gx, Gy
 
 class PrivateKey:
     def __init__(self, secret):
         self.secret = secret # secret is a num
-        self.__point__ = secret * G # public key
+        self.point = secret * S256Point(Gx, Gy) # public key
 
     def sign(self, z):
         k = randint(0, N)
-        r = (k * G).x.num
+        r = (k * S256Point(Gx, Gy)).x.num
         k_inv = pow(k, N - 2, N)
         s = (z + r * self.secret) * k_inv % N
         if s > N / 2:
             s = N - s
         return Signature(r, s)
-
-    def get_public_key(self):
-        return self.__point__
 
     def hex(self):
         return '{:x}'.format(self.secret).zfill(64)

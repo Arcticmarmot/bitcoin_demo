@@ -1,5 +1,6 @@
-from ecc.field_element import S256Field
-from helper import hash160, encode_base58_checksum, N, A, B, P, G
+from field_element import S256Field
+from helper import hash160, encode_base58_checksum
+from params import N, A, B, Gx, Gy
 
 class Point:
     def __init__(self, x, y, a, b):
@@ -111,5 +112,27 @@ class S256Point(Point):
         s_inv = pow(sig.s, N - 2, N)
         u = z * s_inv % N
         v = sig.r * s_inv % N
-        R = u * G + v * self
+        R = u * S256Point(Gx, Gy) + v * self
         return R.x.num == sig.r
+
+    def parse(self, sec_bin):
+        """return a Point object from an SEC binary (not hex)"""
+        prefix = sec_bin[0]
+        if prefix == 4:
+            x = int.from_bytes(sec_bin[1:33], 'big')
+            y = int.from_bytes(sec_bin[33:65], 'big')
+            return S256Point(x, y)
+        is_even = prefix == 2
+        x = S256Field(int.from_bytes(sec_bin[1:], 'big'))
+        alpha = x ** 3 + S256Field(B)
+        beta = alpha.sqrt()
+        if beta.num % 2 == 0:
+            even_beta = beta
+            odd_beta = S256Field(P - beta.num)
+        else:
+            even_beta = S256Field(P - beta.num)
+            odd_beta = beta
+        if is_even:
+            return S256Point(x, even_beta)
+        else:
+            return S256Point(x, odd_beta)
